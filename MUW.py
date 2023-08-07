@@ -66,13 +66,13 @@ def ReadFile(sFilename: str):
     return sFileData
 
 
-def RemoveAllNonAlphanumeric(sInput: str):
+def RemoveAllNonAlpha(sInput: str):
     return ''.join([i for i in sInput if (i.isalpha() or i == " ")])
 
 
 def ParseText(sText: str):
     # Filters the text to remove all characters that are not letters or spaces and splits the text in words, converts tabs in spaces for splitting
-    lUnprocessedWordList = RemoveAllNonAlphanumeric(
+    lUnprocessedWordList = RemoveAllNonAlpha(
         sText.strip().strip("\n").replace("\t", " ")).split(" ")
 
     # Removing empty entries in list due to multiple spaces in a row
@@ -85,11 +85,11 @@ def ParseText(sText: str):
 
 def GetNumberSuffix(iNumber: int):
     sNumberSuffix = "th"
-    if str(args.N)[-1] == "1":
+    if str(iNumber)[-1] == "1":
         sNumberSuffix = "st"
-    if str(args.N)[-1] == "2":
+    if str(iNumber)[-1] == "2":
         sNumberSuffix = "nd"
-    if str(args.N)[-1] == "3":
+    if str(iNumber)[-1] == "3":
         sNumberSuffix = "rd"
     return sNumberSuffix
 
@@ -138,7 +138,7 @@ def main():
     if args.N == 0:
         for i in range(len(lWordCount)):
             print(
-                f'The {i+1}{GetNumberSuffix(i)} most used word in the text is : "{lWordCount[i][1]}" with {lWordCount[i][0]} occurences.')
+                f'The {i+1}{GetNumberSuffix(i+1)} most used word in the text is : "{lWordCount[i][1]}" with {lWordCount[i][0]} occurences.')
 
     else:
         print(
