@@ -131,6 +131,8 @@ def main() :
     if args.N-1 > len(lWordCount) :
         raise ValueError(f"Argument N supplied ({args.N}) is bigger than the unique words count in the text ({len(lWordCount)}).")
 
+    if len(lWordCount) < 1 :
+        exit()
 
     #Text padding
     print("\n")
