@@ -1,4 +1,1 @@
-argparse
-configparser
-json
-xml
+configparser==6.0.0

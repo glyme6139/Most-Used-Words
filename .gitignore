@@ -1,6 +1,5 @@
 .vscode
 *.xml
-*.txt
 *.json
 venv/
 data/
