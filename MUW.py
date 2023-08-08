@@ -7,6 +7,8 @@
 # Imports
 import argparse
 import configparser
+import json
+import xml.etree.cElementTree as ET
 
 # Config Parsing
 default_number = 10
@@ -35,6 +37,12 @@ parser.add_argument('-f', '--file', help="Input file to read text from.",
 
 parser.add_argument('-i', '--input', help="Input text.",
                     type=str)
+
+parser.add_argument('-o', '--output', help="Specifies the path to an output file.",
+                    type=str)
+
+parser.add_argument('-of', '--output-format', help="Specifies the format to use for the output. (default : json) (does not affect the extension)",
+                    type=str, default="json",choices=["json", "xml"])
 
 parser.add_argument('-n', '--number', help=f"Specifies the number of words to get the count of from the start argument. (default {default_number}, gets the {default_number} most used words) (if zero, shows count for every word)",
                     type=int, default=default_number)
@@ -70,7 +78,6 @@ if args.file and args.input :
 # Variables
 bVerbose = args.verbose
 
-
 # Functions
 def count_words(word_list: list):
     word_dict = {}
@@ -82,7 +89,7 @@ def count_words(word_list: list):
     return word_dict
 
 
-def word_dict_to_list(word_dict: dict):
+def word_dict_to_word_list(word_dict: dict):
     word_list = []
     for i in word_dict:
         word_list.append((word_dict[i], i))
@@ -125,6 +132,40 @@ def get_number_suffix(number: int):
         number_suffix = "rd"
     return number_suffix
 
+def word_list_to_word_dict(word_list) :
+    output_dict = {}
+    for w in word_list :
+        output_dict[w[1]] = w[0]
+    return output_dict
+
+def save_results(filename, word_list) :
+    file_data = None
+    if args.output_format == "json" :
+        output_dict = word_list_to_word_dict(word_list)
+        file_data = json.dumps(output_dict, indent=4)
+        
+    if args.output_format == "xml" :
+        output_xml = ET.Element("data")
+        # populating xml tree
+        for w in word_list :
+            element = ET.SubElement(output_xml,"word")
+            ET.SubElement(element,"text").text = w[1]
+            ET.SubElement(element,"number").text = str(w[0])
+        # formating xml and dumping to string
+        ET.indent(output_xml)
+        file_data = ET.tostring(output_xml).decode("UTF-8")
+
+    # writing data if any
+    if file_data :
+        with open(filename, "w") as outfile:
+            outfile.write(file_data)
+        return f"Successfuly saved data to {filename} with {args.output_format} format."
+    else :
+        raise RuntimeError(f"Cannot save data to {filename} with {args.output_format} format, the format isn't supported.")
+
+
+
+
 
 if __name__ == "__main__":
     
@@ -150,7 +191,7 @@ if __name__ == "__main__":
         print("\n\n-------- Word Count --------\n\n")
         print(word_count_dict)
 
-    word_count = word_dict_to_list(word_count_dict)
+    word_count = word_dict_to_word_list(word_count_dict)
 
     if bVerbose:
         print("\n\n-------- Word Dict To Word List --------\n\n")
@@ -166,15 +207,18 @@ if __name__ == "__main__":
     # Text padding
     print("\n")
 
+    result_list = word_count
+
     if args.number == 0:
         for i in range(args.start-1, len(word_count)):
             print(
                 f'The {i+1}{get_number_suffix(i+1)} most used word in the text is : "{word_count[i][1]}" with {word_count[i][0]} occurences.')
 
     else:
-        for i in range(args.start,min(args.start+args.number,len(word_count)+1)):
+        result_list = word_count[args.start-1:min(args.start+args.number,len(word_count)+1)-1]
+        for i in range(len(result_list)):
             print(
-                f'The {i}{get_number_suffix(i)} most used word in the text is : "{word_count[i-1][1]}" with {word_count[i-1][0]} occurences.')
+                f'The {i+args.start}{get_number_suffix(i+args.start)} most used word in the text is : "{result_list[i][1]}" with {result_list[i][0]} occurences.')
             
     
     
@@ -186,5 +230,16 @@ if __name__ == "__main__":
 
     # Text padding
     print("\n")
+
+
+    if args.output :
+
+        print(f"Saving results to {args.output}")
+
+        # Text padding
+        print("\n")
+
+        print(save_results(args.output, result_list))
+
 
     exit()
