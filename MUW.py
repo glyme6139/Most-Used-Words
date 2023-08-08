@@ -12,10 +12,14 @@ import xml.etree.cElementTree as ET
 
 # Config Parsing
 default_number = 10
+stopwords = {}
 config = configparser.ConfigParser()
 config.read('config.conf')
 if "muw.settings" in config.sections() :
     default_number = config["muw.settings"].getint("DefaultNumber", 10)
+if "muw.stopwords" in config.sections() :
+    for i in config["muw.stopwords"] :
+        stopwords[i] = str.lower(config["muw.stopwords"].get(i)).replace("[","").replace("]","").replace(" ","").replace('"',"").split(",")
 else :
     config["muw.settings"] = {"DefaultNumber" : 10}
     f = open("config.conf","w")
@@ -50,8 +54,12 @@ parser.add_argument('-n', '--number', help=f"Specifies the number of words to ge
 parser.add_argument('-s', '--start', help=f"Specifies the starting number from wich to get the N^th most used words. (default 1, if 10 with n = 10 would show the 10th to 19th most used words)",
                     type=int, default=1)
 
+parser.add_argument('-sw', '--stopwords', help="If specified will remove stopwords (such as 'a' 'the' 'wich' etc.) (defined by languages in config.conf)",
+                    type=str, choices=list(stopwords.keys()))
+
 parser.add_argument('-v', '--verbose',
                     action='store_true')
+
 
 args = parser.parse_args()
 
@@ -163,6 +171,13 @@ def save_results(filename, word_list) :
     else :
         raise RuntimeError(f"Cannot save data to {filename} with {args.output_format} format, the format isn't supported.")
 
+def filter_stopwords(word_list) :
+    filtered_word_list = []
+    for w in word_list :
+        if w[1] not in stopwords[args.stopwords] :
+            filtered_word_list.append(w)
+    return filtered_word_list
+
 
 
 
@@ -171,9 +186,9 @@ if __name__ == "__main__":
     
     input_text = ""
     if args.file:
-        input_text = read_file(args.file)
+        input_text = str.lower(read_file(args.file))
     if args.input :
-        input_text = args.input
+        input_text = str.lower(args.input)
 
     if bVerbose:
         print("\n\n-------- Input Text --------\n\n")
@@ -196,6 +211,13 @@ if __name__ == "__main__":
     if bVerbose:
         print("\n\n-------- Word Dict To Word List --------\n\n")
         print(word_count)
+
+    if args.stopwords :
+        word_count = filter_stopwords(word_count)
+
+        if bVerbose:
+            print("\n\n-------- Filtered Word List --------\n\n")
+            print(word_count)
 
     if args.start > len(word_count):
         raise ValueError(
