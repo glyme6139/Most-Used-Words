@@ -53,8 +53,11 @@ parser.add_argument('-n', '--number', help=f"Specifies the number of words to ge
 parser.add_argument('-s', '--start', help=f"Specifies the starting number from wich to get the N^th most used words. (default 1, if 10 with n = 10 would show the 10th to 19th most used words)",
                     type=int, default=1)
 
-parser.add_argument('-sw', '--stopwords', help="If specified will remove stopwords (such as 'a' 'the' 'wich' etc.) (defined by languages in config.conf)",
+parser.add_argument('-sw', '--stopwords', help="Specifies to remove supplied language specific stopwords (such as 'a' 'the' 'wich' etc.) (defined by languages in config.conf)",
                     type=str, choices=list(stopwords.keys()))
+
+parser.add_argument('-t', '--threshold', help="Specifies the minimum number of word occurences at wich words will be added to output (default 0)",
+                    type=int, default=0)
 
 parser.add_argument('-v', '--verbose',
                     action='store_true')
@@ -71,6 +74,10 @@ if args.start < 1:
 if args.number < 0:
     raise ValueError(
         f"Number supplied ({args.number}) is invalid, number must be at least 0.")
+
+if args.threshold < 0:
+    raise ValueError(
+        f"Threshold supplied ({args.threshold}) is invalid, number must be at least 0.")
 
 if not args.file and not args.input:
     raise SyntaxError(
@@ -182,6 +189,13 @@ def filter_stopwords(word_list):
             filtered_word_list.append(w)
     return filtered_word_list
 
+def filter_threshold(word_list) :
+    filtered_word_list = []
+    for w in word_list:
+        if w[0] >= args.threshold:
+            filtered_word_list.append(w)
+    return filtered_word_list
+
 
 if __name__ == "__main__":
 
@@ -217,8 +231,19 @@ if __name__ == "__main__":
         word_count = filter_stopwords(word_count)
 
         if bVerbose:
-            print("\n\n-------- Filtered Word List --------\n\n")
+            print("\n\n-------- Stopwords Filtered Word List --------\n\n")
             print(word_count)
+
+
+    if args.threshold :
+        word_count = filter_threshold(word_count)
+
+        if bVerbose:
+            print("\n\n-------- Threshold Filtered Word List --------\n\n")
+            print(word_count)
+
+
+    
 
     if args.start > len(word_count):
         raise ValueError(
