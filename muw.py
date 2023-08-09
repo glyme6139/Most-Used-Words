@@ -4,6 +4,7 @@
 ##                  ##
 ######################
 
+
 # Imports
 from helpers import *
 
@@ -37,16 +38,6 @@ def word_dict_to_word_list(word_dict: dict):
     sorted_list = sorted(word_list, key=lambda x: (x[0], x[1]), reverse=True)
     return sorted_list
 
-
-def read_file(filename: str):
-    f = open(filename, 'r')
-    file_data = ''.join(f.readlines())  # Concatinating lines to a big text
-    f.close()
-    return file_data
-
-
-def remove_all_non_alpha(input_text: str):
-    return ''.join([i for i in input_text if (i.isalpha() or i == " ")])
 
 
 def text_to_words(text: str):
@@ -113,6 +104,13 @@ def filter_stopwords(word_list):
             filtered_word_list.append(w)
     return filtered_word_list
 
+def filter_stopwordsv2(word_list):
+    filtered_word_list = []
+    for w in word_list:
+        if w not in stopwords[args.stopwords]:
+            filtered_word_list.append(w)
+    return filtered_word_list
+
 
 def filter_threshold(word_list):
     filtered_word_list = []
@@ -121,6 +119,72 @@ def filter_threshold(word_list):
             filtered_word_list.append(w)
     return filtered_word_list
 
+
+def process_inputv2(input_text):
+    global total_word_count
+    global unique_word_count
+    
+    debug_print("Input Text", input_text)
+
+    word_list = text_to_words(input_text)
+
+    debug_print("Text To Words", word_list)
+    total_word_count = len(word_list)
+
+
+    if args.stopwords:
+        word_list = filter_stopwordsv2(word_list)
+
+        debug_print("Stopwords Filtered Word List", word_list)
+
+
+    word_count_dict = count_words(word_list)
+
+    debug_print("Word Count", word_count_dict)
+
+    unique_word_list = word_dict_to_word_list(word_count_dict)
+
+    debug_print("Word Dict To Word List", unique_word_list)
+    unique_word_count = len(unique_word_list)
+
+    if args.threshold > 1:
+        unique_word_list = filter_threshold(unique_word_list)
+
+        debug_print("Threshold Filtered Word List", unique_word_list)
+
+    return unique_word_list
+
+def process_inputv3(input_text):
+    global total_word_count
+    global unique_word_count
+    
+    debug_print("Input Text", input_text)
+
+    word_list = text_to_words(input_text)
+
+    debug_print("Text To Words", word_list)
+    total_word_count = len(word_list)
+
+    word_count_dict = count_words(word_list)
+
+    debug_print("Word Count", word_count_dict)
+
+    unique_word_list = word_dict_to_word_list(word_count_dict)
+
+    debug_print("Word Dict To Word List", unique_word_list)
+    unique_word_count = len(unique_word_list)
+
+    if args.stopwords:
+        unique_word_list = filter_stopwords(unique_word_list)
+
+        debug_print("Stopwords Filtered Word List", unique_word_list)
+
+    if args.threshold > 1:
+        unique_word_list = filter_threshold(unique_word_list)
+
+        debug_print("Threshold Filtered Word List", unique_word_list)
+
+    return unique_word_list
 
 def process_input(input_text):
     global total_word_count
@@ -147,22 +211,27 @@ def process_input(input_text):
 
         debug_print("Stopwords Filtered Word List", unique_word_list)
 
-    if args.threshold:
+    if args.threshold > 1:
         unique_word_list = filter_threshold(unique_word_list)
 
         debug_print("Threshold Filtered Word List", unique_word_list)
 
     return unique_word_list
 
-def main(input_text,output_filename=None) :
-    
-    unique_word_list = process_input(input_text)
+def main(input_text,output_filename=None, version=1) :
+    unique_word_list = []
+    if version==1 :
+        unique_word_list = process_input(input_text)
+    elif version==2:
+        pass
 
     # Last checks to ensure we don't access non existing memory
 
     if args.start > len(unique_word_list):
-        raise ValueError(
-            f"Argument start supplied ({args.start}) is bigger than the unique words count in the text ({len(unique_word_list)}).")
+        # raise ValueError(
+        #     f"Argument start supplied ({args.start}) is bigger than the unique words count in the text ({len(unique_word_list)}).")
+        print(f"Argument start supplied ({args.start}) is bigger than the unique words count in the text ({len(unique_word_list)}).")
+        return
 
     if len(unique_word_list) < 1:
         return
@@ -190,7 +259,7 @@ def main(input_text,output_filename=None) :
     if args.output:
 
         print(f"Saving results to {args.output}", end="\n\n")
-
+ 
         print(save_results(args.output if not output_filename else output_filename, result_list))
 
     return
@@ -206,5 +275,9 @@ if __name__ == "__main__":
 
     elif args.directory :
         for f in next(os.walk(args.directory))[2] :
+            output_file = None
+            if args.output :
+                output_file = os.path.abspath(args.output+os.path.sep+"muw_out_"+f.rsplit(".",1)[0]+f".{args.output_format}")
+            print(f"Parsing file {f}",end="\n\n")
             main(str.lower(read_file(   os.path.abspath(args.directory+os.path.sep+f))),
-                                        os.path.abspath(args.output+os.path.sep+"muw_out_"+f.rsplit(".",1)[0]+f".{args.output_format}")) # passing output filename too, parsing f to remove extension of original file and appending new extension
+                                        output_filename=output_file) # passing output filename too, parsing f to remove extension of original file and appending new extension

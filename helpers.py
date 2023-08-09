@@ -109,28 +109,38 @@ def parse_args():
     if not args.file and not args.input and not args.directory:
         raise SyntaxError(
             f"You must supply an input either a file (-f <filenae>), a text (-i <text>), or a directory (-d <directory>).")
-
     if args.file and args.input and args.directory:
         raise SyntaxError(
             f"You must supply at most one input.")
     
-    if not os.path.exists(args.directory) :
-        raise RuntimeError(f"Directory {args.directory} not found.")
-    
-    print(list(os.walk(args.directory)))
-    if len(next(os.walk(args.directory))[2]) < 1 :
-        raise RuntimeError(f"Directory {args.directory} has no files.")
-    
-    if args.directory and args.output:
-        if os.path.exists(args.output) and os.path.isdir(args.output):
-            pass
-        elif os.access(os.path.dirname(args.output), os.W_OK):
-            os.mkdir(args.output)
-        else:
-            raise RuntimeError(f"Could not find output directory {args.output} and could not create it.")
+    if args.directory :
+        if not os.path.exists(args.directory) :
+            raise RuntimeError(f"Directory {args.directory} not found.")
         
+        if len(next(os.walk(args.directory))[2]) < 1 :
+            raise RuntimeError(f"Directory {args.directory} has no files.")
+        
+        if args.directory and args.output:
+            if os.path.exists(args.output) and os.path.isdir(args.output):
+                pass
+            elif os.access(os.path.dirname(args.output), os.W_OK):
+                os.mkdir(args.output)
+            else:
+                raise RuntimeError(f"Could not find output directory {args.output} and could not create it.")
+            
 
     global verbose
     verbose = args.verbose
 
     return args
+
+
+def read_file(filename: str):
+    f = open(filename, 'r')
+    file_data = ''.join(f.readlines())  # Concatinating lines to a big text
+    f.close()
+    return file_data
+
+
+def remove_all_non_alpha(input_text: str):
+    return ''.join([i for i in input_text if (i.isalpha() or i == " ")])
